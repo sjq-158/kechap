@@ -1,9 +1,10 @@
 @page "/settings"
+@inject kechap.Services.TimerSettingsService SettingsService
 
 <div class="settings-page">
     <h1>Timer Customization ⚙️</h1>
 
-    <div class="settings-card card-glass">
+    <div class="settings-card">
         <div class="setting-row">
             <label>Pomodoro Duration (mins)</label>
             <input type="number" @bind="pomodoroMins" min="1" max="120" />
@@ -18,16 +19,36 @@
         </div>
 
         <button class="save-btn" @onclick="SaveSettings">Save Changes</button>
+
+        @if (showSaved)
+        {
+            <div class="saved-note">✔ Saved!</div>
+        }
     </div>
 </div>
 
 @code {
-    private int pomodoroMins = 25;
-    private int shortBreakMins = 5;
-    private int longBreakMins = 15;
+    private int pomodoroMins;
+    private int shortBreakMins;
+    private int longBreakMins;
+    private bool showSaved = false;
 
-    private void SaveSettings()
+    protected override void OnInitialized()
     {
-        // TODO: persist to local storage or a settings service
+        pomodoroMins = SettingsService.PomodoroMinutes;
+        shortBreakMins = SettingsService.ShortBreakMinutes;
+        longBreakMins = SettingsService.LongBreakMinutes;
+    }
+
+    private async Task SaveSettings()
+    {
+        SettingsService.PomodoroMinutes = pomodoroMins;
+        SettingsService.ShortBreakMinutes = shortBreakMins;
+        SettingsService.LongBreakMinutes = longBreakMins;
+
+        showSaved = true;
+        StateHasChanged();
+        await Task.Delay(1500);
+        showSaved = false;
     }
 }

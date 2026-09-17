@@ -1,51 +1,84 @@
 ﻿@page "/"
+@inject kechap.Services.TimerSettingsService SettingsService
+@implements IDisposable
 
-<div class="dashboard-grid">
-    <div class="timer-card card-glass">
-        <div class="pill-tabs">
-            <button class="tab @(activeMode == "pomodoro" ? "active" : "")" @onclick='() => SetMode("pomodoro")'>Pomodoro</button>
-            <button class="tab @(activeMode == "short" ? "active" : "")" @onclick='() => SetMode("short")'>Short Break</button>
-            <button class="tab @(activeMode == "long" ? "active" : "")" @onclick='() => SetMode("long")'>Long Break</button>
+<div class="desktop">
+    <div class="win-window timer-window">
+        <div class="win-titlebar">
+            <div class="title">🍅 Timer</div>
+            <div class="win-controls">
+                <span class="win-btn">_</span>
+                <span class="win-btn">□</span>
+                <span class="win-btn close">✕</span>
+            </div>
         </div>
-
-        <div class="timer-display">@FormattedTime</div>
-        <div class="timer-label">DEEP FOCUS</div>
-
-        <button class="start-btn @(isRunning ? "pressed" : "")" @onclick="ToggleTimer">
-            @(isRunning ? "PAUSE" : "▶ START")
-        </button>
+        <div class="win-menubar">
+            <span class="menu-item @(activeMode == "pomodoro" ? "active" : "")" @onclick='() => SetMode("pomodoro")'>Pomodoro</span>
+            <span class="menu-item @(activeMode == "short" ? "active" : "")" @onclick='() => SetMode("short")'>Short Break</span>
+            <span class="menu-item @(activeMode == "long" ? "active" : "")" @onclick='() => SetMode("long")'>Long Break</span>
+        </div>
+        <div class="win-canvas">
+            <div class="timer-display">@FormattedTime</div>
+            <div class="timer-label">DEEP FOCUS</div>
+            <button class="start-btn @(isRunning ? "pressed" : "")" @onclick="ToggleTimer">
+                @(isRunning ? "PAUSE" : "▶ START")
+            </button>
+        </div>
     </div>
 
-    <div class="tasks-card card-glass">
-        <h3>Tasks <span class="task-count">@completedCount/@tasks.Count completed</span></h3>
-
-        @foreach (var task in tasks)
-        {
-            <div class="task-row @(task.Done ? "done" : "")">
-                <input type="checkbox" checked="@task.Done" @onchange="() => ToggleTask(task)" />
-                <span>@task.Title</span>
-                <span class="tag">@task.Tag</span>
+    <div class="win-window tasks-window">
+        <div class="win-titlebar">
+            <div class="title">📝 Tasks</div>
+            <div class="win-controls">
+                <span class="win-btn">_</span>
+                <span class="win-btn">□</span>
+                <span class="win-btn close">✕</span>
             </div>
-        }
+        </div>
+        <div class="win-canvas tasks-canvas">
+            @if (tasks.Count == 0 && !isAddingTask)
+            {
+                <p class="empty-state">No tasks yet. Add one below!</p>
+            }
+            @foreach (var task in tasks)
+            {
+                <div class="task-row @(task.Done ? "done" : "")">
+                    <input type="checkbox" checked="@task.Done" @onchange="() => ToggleTask(task)" />
+                    <span>@task.Title</span>
+                    <button class="delete-btn" @onclick="() => RemoveTask(task)">✕</button>
+                </div>
+            }
 
-        <button class="add-task-btn" @onclick="AddTask">+ Add Task</button>
+            @if (isAddingTask)
+            {
+                <div class="add-task-row">
+                    <input @bind="newTaskTitle" @bind:event="oninput" placeholder="Task name..." @onkeyup="HandleKeyUp" autofocus />
+                    <button class="confirm-btn" @onclick="ConfirmAddTask">Add</button>
+                    <button class="cancel-btn" @onclick="CancelAddTask">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <button class="add-task-btn" @onclick="StartAddTask">+ Add Task</button>
+            }
+        </div>
     </div>
 </div>
 
 @code {
     private string activeMode = "pomodoro";
     private bool isRunning = false;
-    private int secondsLeft = 25 * 60;
+    private int secondsLeft;
     private System.Threading.Timer? timer;
 
-    private List<TaskItem> tasks = new()
-    {
-        new TaskItem { Title = "Read Chapter 4 — Thermodynamics", Tag = "Study" },
-        new TaskItem { Title = "Finish CS assignment on arrays", Tag = "Code", Done = true },
-        new TaskItem { Title = "Review lecture notes — Biology", Tag = "Study" },
-    };
+    private List<TaskItem> tasks = new();
+    private bool isAddingTask = false;
+    private string newTaskTitle = "";
 
-    private int completedCount => tasks.Count(t => t.Done);
+    protected override void OnInitialized()
+    {
+        secondsLeft = SettingsService.PomodoroMinutes * 60;
+    }
 
     private string FormattedTime => TimeSpan.FromSeconds(secondsLeft).ToString(@"mm\:ss");
 
@@ -54,10 +87,10 @@
         activeMode = mode;
         secondsLeft = mode switch
         {
-            "pomodoro" => 25 * 60,
-            "short" => 5 * 60,
-            "long" => 15 * 60,
-            _ => 25 * 60
+            "pomodoro" => SettingsService.PomodoroMinutes * 60,
+            "short" => SettingsService.ShortBreakMinutes * 60,
+            "long" => SettingsService.LongBreakMinutes * 60,
+            _ => SettingsService.PomodoroMinutes * 60
         };
         isRunning = false;
         timer?.Dispose();
@@ -79,6 +112,7 @@
                 {
                     isRunning = false;
                     timer?.Dispose();
+                    InvokeAsync(StateHasChanged);
                 }
             }, null, 0, 1000);
         }
@@ -89,16 +123,40 @@
     }
 
     private void ToggleTask(TaskItem task) => task.Done = !task.Done;
+    private void RemoveTask(TaskItem task) => tasks.Remove(task);
 
-    private void AddTask()
+    private void StartAddTask()
     {
-        tasks.Add(new TaskItem { Title = "New Task", Tag = "Study" });
+        isAddingTask = true;
+        newTaskTitle = "";
     }
+
+    private void ConfirmAddTask()
+    {
+        if (!string.IsNullOrWhiteSpace(newTaskTitle))
+        {
+            tasks.Add(new TaskItem { Title = newTaskTitle.Trim() });
+        }
+        isAddingTask = false;
+        newTaskTitle = "";
+    }
+
+    private void CancelAddTask()
+    {
+        isAddingTask = false;
+        newTaskTitle = "";
+    }
+
+    private void HandleKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ConfirmAddTask();
+    }
+
+    public void Dispose() => timer?.Dispose();
 
     public class TaskItem
     {
         public string Title { get; set; } = "";
-        public string Tag { get; set; } = "";
         public bool Done { get; set; }
     }
 }

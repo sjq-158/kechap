@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
+@implements IDisposable
 
-<div class="app-wrapper">
+<div class="page-wrapper @BackgroundClass" data-theme="@(isDark ? "dark" : "light")">
     <nav class="top-navbar">
         <NavLink href="" Match="NavLinkMatch.All" class="logo-link">
             <img src="images/tomato-icon.svg" alt="tomato" class="logo-icon" />
@@ -14,9 +16,9 @@
             <NavLink href="settings" class="nav-item">
                 <img src="images/settings-icon.svg" alt="" /> Setting
             </NavLink>
-            <NavLink href="signin" class="nav-item sign-in-pill">
-                <img src="images/user-icon.svg" alt="" /> Sign In
-            </NavLink>
+            <button class="theme-toggle" @onclick="ToggleTheme">
+                @(isDark ? "☀️ Light" : "🌙 Dark")
+            </button>
         </div>
     </nav>
 
@@ -24,3 +26,22 @@
         @Body
     </main>
 </div>
+
+@code {
+    private bool isDark = false;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    private string BackgroundClass =>
+        string.IsNullOrEmpty(Nav.ToBaseRelativePath(Nav.Uri)) ? "bg-timer" : "bg-app";
+
+    private void ToggleTheme() => isDark = !isDark;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}
