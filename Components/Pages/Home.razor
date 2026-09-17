@@ -1,7 +1,104 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<div class="dashboard-grid">
+    <div class="timer-card card-glass">
+        <div class="pill-tabs">
+            <button class="tab @(activeMode == "pomodoro" ? "active" : "")" @onclick='() => SetMode("pomodoro")'>Pomodoro</button>
+            <button class="tab @(activeMode == "short" ? "active" : "")" @onclick='() => SetMode("short")'>Short Break</button>
+            <button class="tab @(activeMode == "long" ? "active" : "")" @onclick='() => SetMode("long")'>Long Break</button>
+        </div>
 
-<h1>Hello, world!</h1>
+        <div class="timer-display">@FormattedTime</div>
+        <div class="timer-label">DEEP FOCUS</div>
 
-Welcome to your new app.
+        <button class="start-btn @(isRunning ? "pressed" : "")" @onclick="ToggleTimer">
+            @(isRunning ? "PAUSE" : "▶ START")
+        </button>
+    </div>
+
+    <div class="tasks-card card-glass">
+        <h3>Tasks <span class="task-count">@completedCount/@tasks.Count completed</span></h3>
+
+        @foreach (var task in tasks)
+        {
+            <div class="task-row @(task.Done ? "done" : "")">
+                <input type="checkbox" checked="@task.Done" @onchange="() => ToggleTask(task)" />
+                <span>@task.Title</span>
+                <span class="tag">@task.Tag</span>
+            </div>
+        }
+
+        <button class="add-task-btn" @onclick="AddTask">+ Add Task</button>
+    </div>
+</div>
+
+@code {
+    private string activeMode = "pomodoro";
+    private bool isRunning = false;
+    private int secondsLeft = 25 * 60;
+    private System.Threading.Timer? timer;
+
+    private List<TaskItem> tasks = new()
+    {
+        new TaskItem { Title = "Read Chapter 4 — Thermodynamics", Tag = "Study" },
+        new TaskItem { Title = "Finish CS assignment on arrays", Tag = "Code", Done = true },
+        new TaskItem { Title = "Review lecture notes — Biology", Tag = "Study" },
+    };
+
+    private int completedCount => tasks.Count(t => t.Done);
+
+    private string FormattedTime => TimeSpan.FromSeconds(secondsLeft).ToString(@"mm\:ss");
+
+    private void SetMode(string mode)
+    {
+        activeMode = mode;
+        secondsLeft = mode switch
+        {
+            "pomodoro" => 25 * 60,
+            "short" => 5 * 60,
+            "long" => 15 * 60,
+            _ => 25 * 60
+        };
+        isRunning = false;
+        timer?.Dispose();
+    }
+
+    private void ToggleTimer()
+    {
+        isRunning = !isRunning;
+        if (isRunning)
+        {
+            timer = new System.Threading.Timer(_ =>
+            {
+                if (secondsLeft > 0)
+                {
+                    secondsLeft--;
+                    InvokeAsync(StateHasChanged);
+                }
+                else
+                {
+                    isRunning = false;
+                    timer?.Dispose();
+                }
+            }, null, 0, 1000);
+        }
+        else
+        {
+            timer?.Dispose();
+        }
+    }
+
+    private void ToggleTask(TaskItem task) => task.Done = !task.Done;
+
+    private void AddTask()
+    {
+        tasks.Add(new TaskItem { Title = "New Task", Tag = "Study" });
+    }
+
+    public class TaskItem
+    {
+        public string Title { get; set; } = "";
+        public string Tag { get; set; } = "";
+        public bool Done { get; set; }
+    }
+}

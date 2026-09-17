@@ -1,0 +1,40 @@
+@page "/report"
+
+<div class="report-page">
+    <h1>Focus Report 📈</h1>
+
+    <div class="metrics-grid">
+        <div class="metric-card card-glass">
+            <div class="metric-number">4.5</div>
+            <div class="metric-label">Hours Focused</div>
+        </div>
+        <div class="metric-card card-glass">
+            <div class="metric-number">11</div>
+            <div class="metric-label">Sessions Done</div>
+        </div>
+        <div class="metric-card card-glass">
+            <div class="metric-number">3</div>
+            <div class="metric-label">Tasks Finished</div>
+        </div>
+    </div>
+
+    <div class="chart-card card-glass">
+        <h3>Weekly Focus Time</h3>
+        <div class="bars">
+            @foreach (var day in weeklyData)
+            {
+                <div class="bar-col">
+                    <div class="bar" style="height:@(day.Hours * 30)px"></div>
+                    <span>@day.Day</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<(string Day, double Hours)> weeklyData = new()
+    {
+        ("Mon", 3.2), ("Tue", 4.5), ("Wed", 2.1), ("Thu", 5.0), ("Fri", 3.8), ("Sat", 1.5), ("Sun", 2.9)
+    };
+}

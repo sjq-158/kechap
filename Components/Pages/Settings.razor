@@ -1,0 +1,33 @@
+@page "/settings"
+
+<div class="settings-page">
+    <h1>Timer Customization ⚙️</h1>
+
+    <div class="settings-card card-glass">
+        <div class="setting-row">
+            <label>Pomodoro Duration (mins)</label>
+            <input type="number" @bind="pomodoroMins" min="1" max="120" />
+        </div>
+        <div class="setting-row">
+            <label>Short Break Duration (mins)</label>
+            <input type="number" @bind="shortBreakMins" min="1" max="60" />
+        </div>
+        <div class="setting-row">
+            <label>Long Break Duration (mins)</label>
+            <input type="number" @bind="longBreakMins" min="1" max="60" />
+        </div>
+
+        <button class="save-btn" @onclick="SaveSettings">Save Changes</button>
+    </div>
+</div>
+
+@code {
+    private int pomodoroMins = 25;
+    private int shortBreakMins = 5;
+    private int longBreakMins = 15;
+
+    private void SaveSettings()
+    {
+        // TODO: persist to local storage or a settings service
+    }
+}
