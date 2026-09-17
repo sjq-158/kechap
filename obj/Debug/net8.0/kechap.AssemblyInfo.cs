@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("kechap")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca2426e54f0ee23df8fa717cc5c801670a8f8e4e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+716b0f0126819228d33b58033603d8cccac8ccc8")]
 [assembly: System.Reflection.AssemblyProductAttribute("kechap")]
 [assembly: System.Reflection.AssemblyTitleAttribute("kechap")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
